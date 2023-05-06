@@ -3,22 +3,16 @@ import React, { useEffect } from 'react'
 const BUFFER_SIZE = 4194304
 const WORKGROUP_SIZE = 128
 
-let measurements = []
-
 const init = async () => {
-  // Check if the browser supports web gpu.
   if (!navigator.gpu) {
     throw Error(`WebGPU not supported.`)
   }
 
-  // Request an adapter. An adapter represents a physical device (e.g. GPU)
   const adapter = await navigator.gpu.requestAdapter()
   if (!adapter) {
     throw Error(`Couldn't request WebGPU adapter.`)
   }
 
-  // Request a device. A device is an abstraction in which a
-  // single application can access gpu resources in a compartamentalized way.
   const device = await adapter.requestDevice()
   
   const shader = `
@@ -232,8 +226,6 @@ const init = async () => {
     },
   })
 
-  const startTime = performance.now()
-
   const commandEncoder = device.createCommandEncoder()
   const passEncoder = commandEncoder.beginComputePass()
 
@@ -284,37 +276,9 @@ const init = async () => {
   const valsData = copyValsArrayBuffer.slice()
   stagingValsBuffer.unmap()
 
-  const endTime = performance.now()
-  const elapsedTime = endTime - startTime
-  // console.log(`Function took ${elapsedTime} milliseconds to execute.`)
-  measurements.push(elapsedTime)
-
   // console.log(new Uint32Array(seqsData))
   // console.log(new Uint32Array(valsData))
-
-  // _END_
 }
-
-const initLoop = async () => {
-  for (let i = 0 ; i < 100; ++i) {
-    for (let i = 0; i < 100; ++i) {
-      await init()
-    }
-
-    // reduce the measurements down to an average
-    // console log how many milliseconds it took to execute
-    // log how many iterations happened to.
-    const sum = measurements.reduce((a, b) => a + b, 0)
-    const avg = sum / measurements.length
-    console.log(`Function was ran ${measurements.length} times.`)
-    console.log(`Function took ${avg} milliseconds to execute.`)
-    console.log(`${BUFFER_SIZE / 4} operations merged per function.`)
-
-    measurements = []
-  }
-}
-
-let cpuMeasurements = []
 
 const initCpu = async () => {
   const arrSize = BUFFER_SIZE / 4
@@ -336,8 +300,6 @@ const initCpu = async () => {
     vals2[i] = getRandomInt(0, 1000)
   }
 
-  const startTime = performance.now()
-
   for (let i = 0; i < arrSize; ++i) {
     if (seqs2[i] > seqs[i] || (seqs2[i] === seqs[i] && vals2[i] > vals[i])) {
       outputSeqs[i] = seqs2[i]
@@ -348,35 +310,13 @@ const initCpu = async () => {
     }
   }
 
-  const endTime = performance.now()
-  const elapsedTime = endTime - startTime
-  // console.log(`Function took ${elapsedTime} milliseconds to execute.`)
-  cpuMeasurements.push(elapsedTime)
-}
-
-const initCpuLoop = async () => {
-  for (let i = 0 ; i < 100; ++i) {
-    for (let i = 0; i < 100; ++i) {
-      await initCpu()
-    }
-
-    // reduce the measurements down to an average
-    // console log how many milliseconds it took to execute
-    // log how many iterations happened to.
-    const sum = cpuMeasurements.reduce((a, b) => a + b, 0)
-    const avg = sum / cpuMeasurements.length
-    console.log(`Function was ran ${cpuMeasurements.length} times.`)
-    console.log(`Function took ${avg} milliseconds to execute.`)
-    console.log(`${BUFFER_SIZE / 4} operations merged per function.`)
-
-    cpuMeasurements = []
-  }
+  console.log(`Function took ${elapsedTime} milliseconds to execute.`)
 }
 
 const WebGPU2 = () => {
   useEffect(() => {
-    initLoop()
-    // initCpuLoop()
+    init()
+    // initCpu()
   }, [])
 
   return (
